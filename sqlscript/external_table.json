@@ -1,0 +1,17 @@
+{
+	"name": "external_table",
+	"properties": {
+		"content": {
+			"query": "--CREATING SCHEMA\nIF NOT EXISTS(SELECT * FROM sys.schemas WHERE name='gold')\nBEGIN\n    EXECUTE('CREATE SCHEMA gold')\nEND;\n\n--CREATING EXTERNAL TABLE\nIF NOT EXISTS(SELECT * FROM sys.external_tables t LEFT JOIN sys.schemas s ON t.schema_id = s.schema_id WHERE t.name = 'sales' AND s.name = 'gold')\nBEGIN\n    EXECUTE(\n        '\n            CREATE EXTERNAL TABLE gold.sales\n            (\n                Outlet_Establishment_Year INT,\n                Outlet_Location_Type VARCHAR(100),\n                Total_Sales DECIMAL(15,2)\n            )\n            WITH\n            (\n                LOCATION = ''github/data/**'',\n                DATA_SOURCE = [gold_source],\n                FILE_FORMAT = [delta_format]\n            )\n        '\n    )\nEND;\n\n\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "sales_db",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
