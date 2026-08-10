@@ -1,0 +1,17 @@
+{
+	"name": "external_resource",
+	"properties": {
+		"content": {
+			"query": "--CREATING DATABASE CREDENTIALS\nIF NOT EXISTS(SELECT * FROM sys.database_credentials WHERE name='synapse_creds')\nBEGIN\nCREATE DATABASE SCOPED CREDENTIAL synapse_creds\nWITH\n    IDENTITY='Managed Identity'\nEND;\n\n\n--CREATING EXTERNAL DATA SOURCE\nIF NOT EXISTS(SELECT * FROM sys.external_data_sources WHERE name='gold_source')\nBEGIN\nCREATE EXTERNAL DATA SOURCE gold_source\nWITH\n(\n    LOCATION = 'https://akashsynapselake.dfs.core.windows.net/gold',\n    CREDENTIAL = synapse_creds\n)\nEND;\n\n--CREATING EXTERNAL FILE FORMAT\nIF NOT EXISTS(SELECT * FROM sys.external_file_formats WHERE name='delta_format')\nBEGIN\nCREATE EXTERNAL FILE FORMAT delta_format\nWITH\n(\n    FORMAT_TYPE = DELTA\n)\nEND;",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "sales_db",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

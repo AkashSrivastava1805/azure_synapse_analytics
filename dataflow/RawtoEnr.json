@@ -1,0 +1,120 @@
+{
+	"name": "RawtoEnr",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "Github_sink",
+						"type": "DatasetReference"
+					},
+					"name": "synapsesource"
+				}
+			],
+			"sinks": [
+				{
+					"linkedService": {
+						"referenceName": "ExternalDataLake",
+						"type": "LinkedServiceReference"
+					},
+					"name": "sinkenr"
+				}
+			],
+			"transformations": [
+				{
+					"name": "ReplaceNulls"
+				},
+				{
+					"name": "changedatatype"
+				},
+				{
+					"name": "castmrp"
+				},
+				{
+					"name": "castyear"
+				},
+				{
+					"name": "castsales"
+				},
+				{
+					"name": "selectcols"
+				},
+				{
+					"name": "alterRow"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          Item_Identifier as string,",
+				"          Item_Weight as string,",
+				"          Item_Fat_Content as string,",
+				"          Item_Visibility as string,",
+				"          Item_Type as string,",
+				"          Item_MRP as string,",
+				"          Outlet_Identifier as string,",
+				"          Outlet_Establishment_Year as string,",
+				"          Outlet_Size as string,",
+				"          Outlet_Location_Type as string,",
+				"          Outlet_Type as string,",
+				"          Item_Outlet_Sales as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false,",
+				"     format: 'parquet') ~> synapsesource",
+				"synapsesource derive(Outlet_Size = iif(isNull(Outlet_Size),'N/A',Outlet_Size)) ~> ReplaceNulls",
+				"ReplaceNulls cast(output(",
+				"          Item_MRP as decimal(10,0) '000,000,000.000'",
+				"     ),",
+				"     errors: true) ~> changedatatype",
+				"changedatatype cast(output(",
+				"          Item_Weight as double '000,000,000.000'",
+				"     ),",
+				"     errors: true) ~> castmrp",
+				"castmrp cast(output(",
+				"          Outlet_Establishment_Year as integer",
+				"     ),",
+				"     errors: true) ~> castyear",
+				"castyear cast(output(",
+				"          Item_Outlet_Sales as double",
+				"     ),",
+				"     errors: true) ~> castsales",
+				"castsales select(mapColumn(",
+				"          Item_Identifier,",
+				"          Item_Weight,",
+				"          Item_Fat_Content,",
+				"          Item_Type,",
+				"          Item_MRP,",
+				"          Outlet_Identifier,",
+				"          Outlet_Establishment_Year,",
+				"          Outlet_Size,",
+				"          Outlet_Location_Type,",
+				"          Outlet_Type,",
+				"          Item_Outlet_Sales",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> selectcols",
+				"selectcols alterRow(insertIf(1==1)) ~> alterRow",
+				"alterRow sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'delta',",
+				"     fileSystem: 'enriched',",
+				"     folderPath: 'github/data',",
+				"     mergeSchema: false,",
+				"     autoCompact: false,",
+				"     optimizedWrite: false,",
+				"     vacuum: 0,",
+				"     deletable: false,",
+				"     insertable: true,",
+				"     updateable: false,",
+				"     upsertable: false,",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> sinkenr"
+			]
+		}
+	}
+}
